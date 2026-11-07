@@ -1,0 +1,24 @@
+name: Inspect AGRIS small provider XML datasets
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect_provider_xml.yml'
+      - 'scripts/inspect_provider_xml.R'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - name: Install R XML parser
+        run: Rscript -e 'install.packages("xml2")'
+      - name: Inspect capped XML downloads and record completeness
+        run: Rscript scripts/inspect_provider_xml.R
