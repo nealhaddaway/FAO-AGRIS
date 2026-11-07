@@ -38,3 +38,18 @@ for(u in urls) {
 }
 dir.create("outputs",showWarnings=FALSE)
 saveRDS(results,"outputs/probe_results.rds")
+
+# Inspect link targets in the HTML pages and negotiate machine-readable catalogue data.
+for(u in urls[1:2]) {
+  rr <- tryCatch(request(u) |> req_user_agent("AGRIS-ODS-feasibility-check/0.1") |>
+    req_headers(Accept="application/rdf+xml, application/xml;q=0.9, text/xml;q=0.8") |>
+    req_timeout(30) |> req_error(is_error=function(x) FALSE) |> req_perform(),error=identity)
+  if(inherits(rr,"error")) {cat("NEGOTIATE ERROR ",u,": ",conditionMessage(rr),"\\n"); next}
+  typ <- resp_headers(rr)[["content-type"]] %||% ""
+  body <- tryCatch(resp_body_string(rr),error=function(e)"")
+  cat(sprintf("NEGOTIATE %s type=%s response_bytes=%d\\n",u,typ,length(resp_body_raw(rr))))
+  urls_found <- regmatches(body,gregexpr('(?:href|src)=[\\x22\\x27][^\\x22\\x27]+[\\x22\\x27]',body,perl=TRUE))[[1L]]
+  urls_found <- unique(urls_found[grepl("xml|rdf|dcat|zip|download|catalog|agris",urls_found,ignore.case=TRUE)])
+  cat("LINKS ",u,": ",paste(head(urls_found,35L),collapse=" ; "),"\\n")
+  cat("DOCUMENT_PREFIX ",u,": ",substr(gsub("[\\r\\n]+"," ",body),1L,250L),"\\n")
+}
