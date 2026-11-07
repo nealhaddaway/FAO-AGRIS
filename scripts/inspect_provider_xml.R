@@ -21,7 +21,7 @@ for (provider in providers) {
   args <- c("--location","--silent","--show-error","--max-time","35",
             "--max-filesize",as.character(max_bytes),
             "--output",dest,"--write-out","HTTP=%{http_code} BYTES=%{size_download}",u)
-  out <- suppressWarnings(system2("curl",args,stdout=TRUE,stderr=TRUE))
+  out <- suppressWarnings(system2("curl",shQuote(args),stdout=TRUE,stderr=TRUE))
   status <- attr(out,"status")
   if(is.null(status)) status <- 0L
   bytes <- if(file.exists(dest)) file.info(dest)$size else 0
@@ -39,7 +39,7 @@ for (provider in providers) {
      provider,xml_name(root),length(children),paste(head(get_tags(root),20L),collapse=","),
      paste(head(unique(xml_name(xml_find_all(root,".//*"))),35L),collapse=",")))
   # AGRIS AP typically contains a repeated record element. Prefer named records.
-  recs <- xml_find_all(root,".//*[local-name()='record' or local-name()='Record' or local-name()='resource' or local-name()='Resource']")
+  recs <- xml_find_all(root,".//*[local-name()='record' or local-name()='Record' or local-name()='resource' or local-name()='Resource' or local-name()='BibliographicResource']")
   if(!length(recs) && length(children)>1L) recs <- children
   if(!length(recs)) recs <- root
   count <- length(recs)
