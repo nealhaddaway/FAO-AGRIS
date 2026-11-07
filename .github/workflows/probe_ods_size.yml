@@ -2,7 +2,9 @@ name: FAO AGRIS ODS file-size probe
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/probe_ods_size.yml']
+    paths:
+      - '.github/workflows/probe_ods_size.yml'
+      - 'scripts/probe_ods_size.R'
   workflow_dispatch:
 permissions:
   contents: read
