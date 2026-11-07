@@ -66,7 +66,7 @@ if(!inherits(r,"error")) {
  resp_status(r),h[["content-type"]] %||% "NA",h[["content-length"]] %||% "NA",
  h[["content-range"]] %||% "NA",length(resp_body_raw(r))))
  links <- regmatches(b,gregexpr('https?://[^"\\x27<>\\s]+',b,perl=TRUE))[[1L]]
- links <- unique(links[grepl("ods|rdf|xml|zip|\.gz",links,ignore.case=TRUE)])
+ links <- unique(links[grepl("ods|rdf|xml|zip|gz",links,ignore.case=TRUE)])
  cat("ODS_LINKS ",paste(head(links,25),collapse=" ; "),"\\n")
  cat("ODS_PREFIX ",substr(gsub("[\\r\\n]+"," ",b),1L,700L),"\\n")
 } else cat("ODS_ENTRY error=",conditionMessage(r),"\\n")
