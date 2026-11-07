@@ -18,17 +18,21 @@ for (i in seq_along(chosen)) {
   file <- chosen[[i]]
   url <- paste0("https://agris.fao.org/ods/",file)
   dest <- tempfile(fileext=".xml")
-  handle <- curl::new_handle(followlocation=TRUE,timeout=75,connecttimeout=15,
-    useragent="FAO-AGRIS-size-sample/0.3")
-  # curl's progress callback aborts when download grows beyond the safety cap.
-  # Failures are reported; files are deleted on every iteration.
-  exceeded <- FALSE
-  cb <- function(down,total,up,uptotal) {
-    if (down > cap || (total > cap && total > 0)) {exceeded <<- TRUE;return(1L)}
-    0L
-  }
-  curl::handle_setopt(handle, noprogress=FALSE, progressfunction=cb)
-  out <- tryCatch(curl::curl_fetch_disk(url,dest,handle=handle),error=identity)
+  # Use curl's native --max-filesize to enforce the cap without an R callback.
+  # curl 8.x enforces the limit even when a server omits Content-Length.
+  args <- c("--location", "--silent", "--show-error", "--max-time", "75",
+    "--connect-timeout", "15", "--max-filesize", as.character(cap),
+    "--user-agent", "FAO-AGRIS-size-sample/0.4",
+    "--output", dest, "--write-out", "%{http_code}", url)
+  response <- suppressWarnings(system2("curl", args=args, stdout=TRUE, stderr=TRUE))
+  exit_code <- attr(response, "status")
+  if(is.null(exit_code)) exit_code <- 0L
+  code_text <- paste(response, collapse=" ")
+  match <- regmatches(code_text, regexpr("[0-9]{3}$", code_text))
+  http_code <- if(length(match) && nzchar(match)) as.integer(match) else NA_integer_
+  exceeded <- exit_code == 63L
+  out <- if(exit_code == 0L) list(status_code=http_code) else
+    simpleError(sprintf("curl exited %d: %s", exit_code, code_text))
   bytes <- if(file.exists(dest)) as.numeric(file.info(dest)$size) else NA_real_
   unlink(dest)
   if(inherits(out,"error")) {
